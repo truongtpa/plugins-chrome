@@ -1,91 +1,81 @@
+// Overleaf Tools - service worker
+// Chuyển phím tắt / lệnh từ popup xuống content script.
 
-function removeEndlineInPage() {
+const ACTIONS = {
+  "remove-endline": "removeEndline",
+  "open-snip-picker": "openSnipPicker",
+};
 
-  function showToast(message, type) {
-    const old = document.getElementById("remove-endline-toast");
-    if (old) old.remove();
+const DEFAULT_SNIPS = [
+  {
+    id: "seed-lst",
+    name: "Code Python (lstlisting)",
+    content:
+      "\\begin{lstlisting}[language=Python, caption={}, label={lst:}]\n\n\\end{lstlisting}",
+  },
+  {
+    id: "seed-minted",
+    name: "Code (minted)",
+    content: "\\begin{minted}[linenos]{python}\n\n\\end{minted}",
+  },
+  {
+    id: "seed-verb",
+    name: "Output thô (verbatim)",
+    content: "\\begin{verbatim}\n\n\\end{verbatim}",
+  },
+  {
+    id: "seed-inline",
+    name: "Code trong dòng",
+    content: "\\texttt{}",
+  },
+];
 
-    const el = document.createElement("div");
-    el.id = "remove-endline-toast";
-    el.textContent = message;
-    const bg = type === "error" ? "#d14343" : "#2e7d32";
-    el.style.cssText = [
-      "position:fixed",
-      "bottom:24px",
-      "right:24px",
-      "z-index:2147483647",
-      "max-width:320px",
-      "padding:12px 16px",
-      "border-radius:10px",
-      "background:" + bg,
-      "color:#fff",
-      "font:14px/1.4 -apple-system,Segoe UI,Roboto,sans-serif",
-      "box-shadow:0 6px 20px rgba(0,0,0,.25)",
-      "opacity:0",
-      "transform:translateY(10px)",
-      "transition:opacity .2s ease,transform .2s ease",
-    ].join(";");
-    document.body.appendChild(el);
+chrome.runtime.onInstalled.addListener(() => {
+  chrome.storage.local.get({ snips: null }, (res) => {
+    if (!res.snips) chrome.storage.local.set({ snips: DEFAULT_SNIPS });
+  });
+});
 
-    requestAnimationFrame(() => {
-      el.style.opacity = "1";
-      el.style.transform = "translateY(0)";
-    });
-    setTimeout(() => {
-      el.style.opacity = "0";
-      el.style.transform = "translateY(10px)";
-      setTimeout(() => el.remove(), 250);
-    }, 1800);
-  }
-
-  const sel = window.getSelection();
-  const text = sel ? sel.toString() : "";
-  if (!text) {
-    showToast("⚠️ Chưa bôi đen text nào.", "error");
-    return;
-  }
-
-
-  const joined = text.replace(/\s*\n\s*/g, " ").replace(/[ \t]+/g, " ").trim();
-
-  const active = document.activeElement;
-  if (active && typeof active.focus === "function") active.focus();
-
-
-  let ok = false;
-  try {
-    ok = document.execCommand("insertText", false, joined);
-  } catch (e) {
-    ok = false;
-  }
-
-  if (!ok) {
-    const dt = new DataTransfer();
-    dt.setData("text/plain", joined);
-    (active || document.body).dispatchEvent(
-      new ClipboardEvent("paste", {
-        clipboardData: dt,
-        bubbles: true,
-        cancelable: true,
-      })
-    );
-  }
-
-  showToast("✅ Đã gộp dòng xong.", "ok");
+function isOverleaf(tab) {
+  return !!tab && typeof tab.url === "string" && tab.url.startsWith("https://www.overleaf.com/");
 }
 
-function runRemoveEndline(tabId) {
-  if (!tabId) return;
-  chrome.scripting.executeScript({
-    target: { tabId },
-    func: removeEndlineInPage,
+// Gửi message; nếu content script chưa được nạp (vừa cài mà chưa reload tab)
+// thì inject rồi gửi lại.
+function sendToTab(tabId, payload) {
+  chrome.tabs.sendMessage(tabId, payload, () => {
+    if (!chrome.runtime.lastError) return;
+    chrome.scripting.executeScript({ target: { tabId }, files: ["content.js"] }, () => {
+      if (chrome.runtime.lastError) return;
+      chrome.tabs.sendMessage(tabId, payload, () => void chrome.runtime.lastError);
+    });
   });
 }
 
 chrome.commands.onCommand.addListener((command, tab) => {
-  if (command === "remove-endline") runRemoveEndline(tab?.id);
+  const action = ACTIONS[command];
+  if (!action) return;
+  if (tab && tab.id != null && isOverleaf(tab)) {
+    sendToTab(tab.id, { action });
+    return;
+  }
+  chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+    const t = tabs && tabs[0];
+    if (isOverleaf(t)) sendToTab(t.id, { action });
+  });
 });
 
-chrome.action.onClicked.addListener((tab) => {
-  runRemoveEndline(tab?.id);
+// Popup gọi vào đây (nó không tự lo phần inject lại content script).
+chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
+  if (!msg || msg.target !== "background" || !msg.action) return;
+  chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+    const t = tabs && tabs[0];
+    if (!isOverleaf(t)) {
+      sendResponse({ ok: false, reason: "not-overleaf" });
+      return;
+    }
+    sendToTab(t.id, { action: msg.action, content: msg.content });
+    sendResponse({ ok: true });
+  });
+  return true; // trả lời bất đồng bộ
 });

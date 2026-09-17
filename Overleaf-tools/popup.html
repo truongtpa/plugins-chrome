@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="vi">
+  <head>
+    <meta charset="utf-8" />
+    <style>
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        width: 360px;
+        background: #fff;
+        color: #1b1f24;
+        font: 13px/1.45 -apple-system, "Segoe UI", Roboto, sans-serif;
+      }
+      header {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 10px 12px;
+        border-bottom: 1px solid #e2e7ee;
+      }
+      header b { flex: 1; font-size: 13px; }
+      header span { color: #8a93a0; font-size: 11px; }
+
+      .bar { display: flex; gap: 8px; padding: 10px 12px 0; }
+      input[type="text"], textarea {
+        width: 100%;
+        padding: 8px 9px;
+        border: 1px solid #c9cfd8;
+        border-radius: 7px;
+        background: #fff;
+        color: #1b1f24;
+        font: 13px/1.4 inherit;
+        outline: none;
+      }
+      textarea {
+        height: 130px;
+        resize: vertical;
+        white-space: pre;
+        font: 12px/1.5 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      }
+
+      button {
+        border: 1px solid #c9cfd8;
+        border-radius: 7px;
+        background: #fff;
+        color: #1b1f24;
+        font: 600 12px/1.2 inherit;
+        cursor: pointer;
+        padding: 7px 10px;
+        white-space: nowrap;
+      }
+      button:hover { background: #f3f6fa; }
+      button.primary { border: none; background: #138a07; color: #fff; }
+      button.primary:hover { background: #107005; }
+
+      #list { max-height: 240px; overflow: auto; margin-top: 8px; }
+      .row {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        padding: 8px 12px;
+        border-bottom: 1px solid #f0f3f7;
+      }
+      .row:hover { background: #f7f9fc; }
+      .row .texts { flex: 1; min-width: 0; cursor: pointer; }
+      .row .name { font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+      .row .prev {
+        margin-top: 1px;
+        color: #6b7684;
+        font: 11px/1.4 ui-monospace, Menlo, Consolas, monospace;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+      .row button { padding: 4px 7px; }
+      .empty { padding: 20px 12px; color: #6b7684; text-align: center; }
+
+      #form { display: none; padding: 10px 12px; border-top: 1px solid #e2e7ee; background: #f9fbfd; }
+      #form.open { display: block; }
+      #form label { display: block; margin: 0 0 4px; font-weight: 600; font-size: 12px; color: #39414d; }
+      .field { margin-bottom: 8px; }
+      .tpl { display: flex; gap: 6px; margin-bottom: 6px; }
+      .tpl button { padding: 4px 8px; font-size: 11px; font-weight: 500; }
+      .actions { display: flex; gap: 8px; justify-content: flex-end; }
+
+      footer {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 9px 12px;
+        border-top: 1px solid #e2e7ee;
+        background: #f7f9fc;
+      }
+      footer button { padding: 5px 8px; font-weight: 500; }
+      kbd {
+        padding: 2px 4px;
+        border: 1px solid #d5dbe3;
+        border-radius: 4px;
+        background: #fff;
+        color: #6b7684;
+        font: 10px/1 ui-monospace, Menlo, Consolas, monospace;
+      }
+      #note { flex: 1; color: #6b7684; font-size: 11px; }
+      #note.warn { color: #b26a00; }
+    </style>
+  </head>
+  <body>
+    <header>
+      <b>Snip code</b>
+      <span id="count"></span>
+      <button id="add" class="primary" type="button">+ Thêm</button>
+    </header>
+
+    <div class="bar"><input id="filter" type="text" placeholder="Tìm snip… (Alt+⇧+K để dán trong Overleaf)" /></div>
+    <div id="list"></div>
+
+    <div id="form">
+      <div class="field">
+        <label for="name">Tên snip</label>
+        <input id="name" type="text" placeholder="VD: Code Python" />
+      </div>
+      <div class="field">
+        <label for="content">Nội dung dán vào Overleaf</label>
+        <div class="tpl">
+          <button data-tpl="lstlisting" type="button">lstlisting</button>
+          <button data-tpl="minted" type="button">minted</button>
+          <button data-tpl="verbatim" type="button">verbatim</button>
+        </div>
+        <textarea id="content" spellcheck="false" placeholder="Đoạn LaTeX sẽ được chèn…"></textarea>
+      </div>
+      <div class="actions">
+        <button id="cancel" type="button">Huỷ</button>
+        <button id="save" class="primary" type="button">Lưu snip</button>
+      </div>
+    </div>
+
+    <footer>
+      <button id="join" type="button">⏎ Gộp dòng <kbd>Alt+⇧+J</kbd></button>
+      <button id="shortcuts" type="button">⌨️ Phím tắt</button>
+      <span id="note"></span>
+    </footer>
+    <script src="popup.js"></script>
+  </body>
+</html>

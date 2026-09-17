@@ -1,17 +1,22 @@
 {
   "manifest_version": 3,
-  "name": "Overleaf Remove Endline",
-  "version": "1.0",
-  "description": "Remove line breaks from selected text in Overleaf",
-  "permissions": ["activeTab", "scripting", "clipboardWrite", "clipboardRead"],
+  "name": "Overleaf Tools",
+  "version": "1.2",
+  "description": "Bộ công cụ cho Overleaf: gộp dòng vùng chọn và dán nhanh các snip code đã lưu.",
+  "permissions": ["activeTab", "scripting", "clipboardWrite", "clipboardRead", "storage"],
   "host_permissions": ["https://www.overleaf.com/*"],
   "action": {
-    "default_title": "Remove endline (gộp dòng vùng đang chọn)"
+    "default_title": "Overleaf Tools",
+    "default_popup": "popup.html"
   },
   "commands": {
     "remove-endline": {
       "suggested_key": { "default": "Alt+Shift+J" },
-      "description": "Remove endlines from selection"
+      "description": "Gộp dòng vùng đang chọn"
+    },
+    "open-snip-picker": {
+      "suggested_key": { "default": "Alt+Shift+K" },
+      "description": "Mở bảng chọn snip code đã lưu"
     }
   },
   "background": { "service_worker": "background.js" },
