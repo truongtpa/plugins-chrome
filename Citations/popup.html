@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8" />
+  <link rel="stylesheet" href="popup.css" />
+</head>
+<body>
+  <header>
+    <h1>BibTeX Citation Maker</h1>
+  </header>
+
+  <nav class="tabs" role="tablist">
+    <button id="tab-btn-clean" class="tab active" role="tab" aria-controls="panel-clean" aria-selected="true">1 · Rút gọn BibTeX</button>
+    <button id="tab-btn-url" class="tab" role="tab" aria-controls="panel-url" aria-selected="false">2 · Từ URL</button>
+    <button id="tab-btn-snip" class="tab" role="tab" aria-controls="panel-snip" aria-selected="false">3 · Snippet</button>
+  </nav>
+
+  <!-- ------------------------------------------------ TAB 1 -->
+  <section id="panel-clean" class="panel" role="tabpanel">
+    <label class="lbl" for="in-bib">Dán BibTeX đầy đủ (nhiều entry cũng được)</label>
+    <textarea id="in-bib" rows="8" spellcheck="false"
+      placeholder="@inproceedings{Starling2020,&#10;  title = {...},&#10;  abstract = {...},&#10;  ...&#10;}"></textarea>
+
+    <div class="opts">
+      <label><input type="checkbox" id="opt-doi" /> giữ <code>doi</code></label>
+      <label><input type="checkbox" id="opt-url" /> giữ <code>url</code></label>
+      <label><input type="checkbox" id="opt-date" checked /> <code>year+month</code> → <code>date</code></label>
+      <label><input type="checkbox" id="opt-align" /> căn thẳng dấu <code>=</code></label>
+    </div>
+
+    <div class="row">
+      <button id="btn-clean" class="primary">Rút gọn &amp; kiểm tra</button>
+      <button id="btn-paste">Dán từ clipboard</button>
+      <button id="btn-clear1" class="ghost">Xoá</button>
+    </div>
+
+    <div id="report1" class="report" hidden></div>
+
+    <label class="lbl" for="out-bib">Kết quả</label>
+    <textarea id="out-bib" rows="10" spellcheck="false" placeholder="Kết quả rút gọn sẽ hiện ở đây…"></textarea>
+    <div class="row">
+      <button id="btn-copy1" class="primary">Sao chép</button>
+      <span id="status1" class="status" aria-live="polite"></span>
+    </div>
+  </section>
+
+  <!-- ------------------------------------------------ TAB 2 -->
+  <section id="panel-url" class="panel" role="tabpanel" hidden>
+    <label class="lbl" for="in-url">URL trang web</label>
+    <div class="row">
+      <input id="in-url" type="url" placeholder="https://hadoop.apache.org/" spellcheck="false" />
+      <button id="btn-tab" title="Lấy URL của tab đang mở">Tab hiện tại</button>
+    </div>
+
+    <div class="opts">
+      <label><input type="checkbox" id="opt-strip" checked /> bỏ tham số theo dõi (<code>utm_*</code>…)</label>
+      <label><input type="checkbox" id="opt-urldate" /> dùng <code>urldate</code> thay <code>note</code></label>
+    </div>
+
+    <div class="row">
+      <button id="btn-fetch" class="primary">Tạo BibTeX</button>
+      <button id="btn-clear2" class="ghost">Xoá</button>
+      <span id="status2" class="status" aria-live="polite"></span>
+    </div>
+
+    <div id="report2" class="report" hidden></div>
+
+    <fieldset id="meta" class="meta" hidden>
+      <legend>Sửa nhanh trước khi chép</legend>
+      <label class="f"><span>key</span><input id="f-key" spellcheck="false" /></label>
+      <label class="f"><span>author</span><input id="f-author" spellcheck="false" /></label>
+      <label class="f"><span>title</span><input id="f-title" spellcheck="false" /></label>
+      <label class="f"><span>year</span><input id="f-year" spellcheck="false" /></label>
+      <label class="f"><span>url</span><input id="f-url" spellcheck="false" /></label>
+      <label class="f"><span>truy cập</span><input id="f-accessed" type="date" /></label>
+    </fieldset>
+
+    <label class="lbl" for="out-url">Kết quả</label>
+    <textarea id="out-url" rows="8" spellcheck="false" placeholder="@online{…}"></textarea>
+    <div class="row">
+      <button id="btn-copy2" class="primary">Sao chép</button>
+    </div>
+  </section>
+
+  <!-- ------------------------------------------------ TAB 3 -->
+  <section id="panel-snip" class="panel" role="tabpanel" hidden>
+    <label class="lbl" for="snip-name">Tên snippet</label>
+    <input id="snip-name" type="text" spellcheck="false" placeholder="vd: bảng 3 cột LaTeX" maxlength="120" />
+
+    <label class="lbl" for="snip-code">Nội dung</label>
+    <textarea id="snip-code" rows="7" spellcheck="false" placeholder="Dán đoạn code / lệnh / mẫu văn bản…"></textarea>
+
+    <div class="row">
+      <button id="btn-snip-save" class="primary">Thêm vào danh sách</button>
+      <button id="btn-snip-cancel" class="ghost" hidden>Huỷ sửa</button>
+      <span id="status3" class="status" aria-live="polite"></span>
+    </div>
+
+    <div class="row snip-toolbar">
+      <input id="snip-search" type="text" spellcheck="false" placeholder="Tìm theo tên hoặc nội dung…" />
+      <span id="snip-count" class="status"></span>
+    </div>
+
+    <ul id="snip-list" class="snips"></ul>
+    <p id="snip-empty" class="empty">Chưa có snippet nào. Nhập tên và nội dung ở trên rồi bấm <b>Thêm vào danh sách</b>.</p>
+  </section>
+
+  <script src="bibtex.js"></script>
+  <script src="popup.js"></script>
+</body>
+</html>
