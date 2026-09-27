@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <h1>CountDown Walltime</h1>
+
+  <label for="start">Start time</label>
+  <input id="start" placeholder="2026-09-27 10:49:45" autocomplete="off">
+
+  <label for="wall">Walltime</label>
+  <input id="wall" placeholder="23:55:27  (hoặc 1-23:55:27)" autocomplete="off">
+
+  <div class="row actions">
+    <button id="save" class="primary" type="button">Bắt đầu</button>
+    <button id="clear" type="button">Xoá</button>
+  </div>
+  <p id="error"></p>
+
+  <section id="result" hidden>
+    <div class="caption">Còn lại</div>
+    <div id="left">--:--:--</div>
+    <div class="bar"><div id="progress"></div></div>
+    <dl>
+      <dt>Bắt đầu</dt><dd id="startOut"></dd>
+      <dt>Kết thúc</dt><dd id="endOut"></dd>
+      <dt>Đã chạy</dt><dd id="elapsed"></dd>
+    </dl>
+  </section>
+
+  <script src="time.js"></script>
+  <script src="popup.js"></script>
+</body>
+</html>
