@@ -1,0 +1,219 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>LearnVocab</title>
+  <link rel="icon" href="icons/icon32.png">
+  <link rel="stylesheet" href="app.css">
+</head>
+<body>
+<div class="app">
+  <aside class="sidebar">
+    <a class="brand" href="#add"><img src="icons/icon48.png" alt=""><span>LearnVocab</span></a>
+    <div class="lang-menu-wrap">
+      <button class="lang-switch" id="langSwitch" title="Đổi ngôn ngữ đang học" aria-haspopup="menu" aria-expanded="false"><span id="lsPill"></span><span class="lbl" id="lsName"></span><i data-icon="updown"></i></button>
+      <div class="lang-menu" id="langMenu" role="menu" hidden></div>
+    </div>
+    <nav>
+      <a href="#add" data-view="add"><i data-icon="plus"></i><span class="lbl">Thêm từ</span></a>
+      <a href="#calendar" data-view="calendar"><i data-icon="calendar"></i><span class="lbl">Lịch học</span></a>
+      <a href="#search" data-view="search"><i data-icon="search"></i><span class="lbl">Tìm kiếm</span></a>
+      <a href="#review" data-view="review"><i data-icon="cards"></i><span class="lbl">Ôn tập</span><span class="nav-badge" id="dueBadge" hidden></span></a>
+      <a href="#tenses" data-view="tenses"><i data-icon="grid"></i><span class="lbl">Thời</span></a>
+      <a href="#settings" data-view="settings"><i data-icon="sliders"></i><span class="lbl">Cài đặt</span></a>
+    </nav>
+  </aside>
+
+  <main>
+    <!-- THÊM TỪ -->
+    <section class="view" id="view-add" hidden>
+      <header class="view-head">
+        <div><h1>Thêm từ mới</h1><p class="sub" id="addSub"></p></div>
+      </header>
+      <div class="add-grid">
+        <div class="card" id="addFormBox"></div>
+        <div class="add-side">
+          <div class="stats" id="stats"></div>
+          <div class="card">
+            <div class="card-head"><h3>Hoạt động 20 tuần gần đây</h3><a href="#calendar" class="link">Xem lịch →</a></div>
+            <div id="heatmap" class="heatmap"></div>
+            <div class="hm-legend"><span>Ít</span><i class="hm l0"></i><i class="hm l1"></i><i class="hm l2"></i><i class="hm l3"></i><i class="hm l4"></i><span>Nhiều</span></div>
+          </div>
+          <div class="card">
+            <div class="card-head"><h3>Đã thêm hôm nay</h3><span id="todayCount" class="muted"></span></div>
+            <div id="todayList" class="mini-list"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- LỊCH -->
+    <section class="view" id="view-calendar" hidden>
+      <header class="view-head">
+        <h1>Lịch học</h1>
+        <div class="cal-ctrl">
+          <div class="seg" id="calMode">
+            <button data-mode="day">Ngày</button><button data-mode="week">Tuần</button><button data-mode="month">Tháng</button>
+          </div>
+          <button class="icon-btn" id="calPrev" title="Trước"><i data-icon="left"></i></button>
+          <button class="btn ghost" id="calToday">Hôm nay</button>
+          <button class="icon-btn" id="calNext" title="Sau"><i data-icon="right"></i></button>
+        </div>
+      </header>
+      <div class="cal-title">
+        <h2 id="calLabel"></h2>
+        <span id="calSummary" class="muted"></span>
+        <span class="spacer"></span>
+        <button id="calReview" class="btn"><i data-icon="cards"></i>Ôn các từ này</button>
+      </div>
+      <div id="calBody"></div>
+    </section>
+
+    <!-- TÌM KIẾM -->
+    <section class="view" id="view-search" hidden>
+      <header class="view-head"><h1>Tìm kiếm</h1></header>
+      <div class="card search-bar">
+        <div class="search-input"><i data-icon="search"></i><input id="q" type="search" placeholder="Tìm từ, nghĩa, ví dụ, ghi chú, tag…  (phím /)"></div>
+        <div class="filters">
+          <select id="fLang"></select>
+          <select id="fType"></select>
+          <select id="fLevel"></select>
+          <select id="fSort">
+            <option value="rel">Liên quan nhất</option>
+            <option value="new">Mới thêm</option>
+            <option value="old">Cũ nhất</option>
+            <option value="az">A → Z</option>
+            <option value="due">Sắp đến hạn ôn</option>
+          </select>
+        </div>
+      </div>
+      <div class="muted result-count" id="resultCount"></div>
+      <div id="results" class="results"></div>
+    </section>
+
+    <!-- ÔN TẬP -->
+    <section class="view" id="view-review" hidden>
+      <header class="view-head"><h1>Ôn tập flashcard</h1></header>
+      <div id="reviewBody"></div>
+    </section>
+
+    <!-- CÁC THỜI TIẾNG ANH -->
+    <section class="view" id="view-tenses" hidden>
+      <header class="view-head">
+        <div><h1>Các thời trong tiếng Anh</h1><p class="sub">3 mốc thời gian × 4 dạng = 12 thời</p></div>
+        <div class="seg" id="tzTabs"><button data-ttab="guide">Chọn thời nào?</button><button data-ttab="table">Bảng</button><button data-ttab="practice">Luyện tập</button></div>
+      </header>
+      <div id="tzTable">
+        <div class="card tz-controls">
+          <div class="tz-row">
+            <label class="f tz-verb">Động từ<input id="tzVerb" value="do" spellcheck="false" autocomplete="off" placeholder="do, be, give up…"></label>
+            <div class="tz-chips" id="tzChips"></div>
+          </div>
+          <div class="tz-row">
+            <div class="f">Chủ ngữ<div class="seg" id="tzSubj"></div></div>
+            <div class="f">Dạng câu<div class="seg" id="tzMode"></div></div>
+          </div>
+          <div class="tz-vforms" id="tzForms"></div>
+        </div>
+        <div class="tz-layout">
+          <div class="card tz-grid" id="tzGrid"></div>
+          <div class="card tz-detail" id="tzDetail"></div>
+        </div>
+      </div>
+      <div id="tzGuide" hidden></div>
+      <div id="tzPractice" hidden></div>
+    </section>
+
+    <!-- CÀI ĐẶT -->
+    <section class="view" id="view-settings" hidden>
+      <header class="view-head"><h1>Cài đặt</h1></header>
+      <div class="settings-grid">
+        <div class="card">
+          <h3>Tự điền bằng AI</h3>
+          <p class="muted">Dùng AI nào cũng được: chọn nhà cung cấp có sẵn, hoặc <b>Tuỳ chỉnh</b> để nhập API riêng. Key chỉ lưu trong trình duyệt này và chỉ gửi tới Base URL bạn cấu hình.</p>
+          <label class="f">Nhà cung cấp<select id="sProvider"></select></label>
+          <label class="f" id="sFormatBox" hidden>Kiểu API
+            <select id="sFormat"><option value="openai">Tương thích OpenAI (/chat/completions)</option><option value="anthropic">Anthropic (/messages)</option></select>
+          </label>
+          <label class="f">Base URL<input id="sBase" spellcheck="false" autocomplete="off"></label>
+          <label class="f"><span class="f-row">API key <a id="sKeyLink" class="link" target="_blank" rel="noopener noreferrer">Lấy key →</a></span>
+            <span class="key-row"><input id="sKey" type="password" autocomplete="off"><button type="button" class="btn ghost" id="sKeyShow">Hiện</button></span>
+          </label>
+          <label class="f">Model<input id="sModel" list="modelList" spellcheck="false" autocomplete="off"></label>
+          <p class="muted ai-hint" id="sHint" hidden></p>
+          <div class="row-btns"><button type="button" class="btn" id="sTest">Kiểm tra kết nối</button><span id="sTestRes" class="muted"></span></div>
+        </div>
+        <div class="card">
+          <h3>Học tập</h3>
+          <label class="f">Ngôn ngữ giải nghĩa (nghĩa, ví dụ dịch)
+            <select id="sMeaning"></select>
+          </label>
+          <label class="f">Mục tiêu mỗi ngày (số từ mới)
+            <input id="sGoal" type="number" min="1" max="500">
+          </label>
+        </div>
+        <div class="card">
+          <h3>Dữ liệu</h3>
+          <p class="muted" id="sDataInfo"></p>
+          <div class="row-btns">
+            <button type="button" class="btn" id="sExport"><i data-icon="download"></i>Xuất JSON</button>
+            <button type="button" class="btn" id="sExportCsv"><i data-icon="download"></i>Xuất CSV</button>
+            <label class="btn"><i data-icon="upload"></i>Nhập JSON<input type="file" id="sImport" accept=".json,application/json" hidden></label>
+          </div>
+          <div class="danger-zone"><button type="button" class="btn danger" id="sClear"><i data-icon="trash"></i>Xoá toàn bộ dữ liệu</button></div>
+        </div>
+      </div>
+    </section>
+  </main>
+</div>
+
+<div class="modal" id="modal" hidden>
+  <div class="modal-back" data-close></div>
+  <div class="modal-box" role="dialog" aria-modal="true">
+    <button class="icon-btn modal-x" data-close title="Đóng (Esc)"><i data-icon="x"></i></button>
+    <div id="modalBody"></div>
+  </div>
+</div>
+<div class="toast" id="toast" role="status"></div>
+
+<datalist id="typeList">
+  <option value="noun"><option value="verb"><option value="adjective"><option value="adverb">
+  <option value="phrase"><option value="phrasal verb"><option value="idiom"><option value="preposition">
+  <option value="conjunction"><option value="pronoun"><option value="interjection"><option value="expression">
+</datalist>
+<datalist id="modelList"></datalist>
+
+<template id="tplForm">
+  <form class="word-form" autocomplete="off" novalidate>
+    <div class="row">
+      <label class="f">Ngôn ngữ<select name="lang"></select></label>
+      <label class="f">Loại từ<input name="type" list="typeList" placeholder="noun, verb, phrase…"></label>
+    </div>
+    <div class="f">
+      <span class="f-label">Từ vựng <em>*</em></span>
+      <div class="word-input">
+        <input name="word" placeholder="Nhập từ hoặc cụm từ…" spellcheck="false">
+        <button type="button" class="btn ai-btn" data-act="ai" title="Tự điền bằng AI (Alt+Enter)"><i data-icon="sparkles"></i><span>Tự điền AI</span></button>
+      </div>
+    </div>
+    <div class="dup-warn" hidden></div>
+    <label class="f">Phiên âm<input name="ipa" placeholder="/həˈloʊ/, pinyin, romaji…"></label>
+    <label class="f">Nghĩa<textarea name="meaning" rows="2" placeholder="Nghĩa của từ"></textarea></label>
+    <label class="f"><span>Ví dụ <small>(mỗi dòng một câu)</small></span><textarea name="examples" rows="3"></textarea></label>
+    <div class="row">
+      <label class="f">Link tham khảo<input name="link" placeholder="https://…"></label>
+      <label class="f"><span>Tags <small>(cách nhau bởi dấu phẩy)</small></span><input name="tags" placeholder="du lịch, IELTS…"></label>
+    </div>
+    <label class="f">Ghi chú<textarea name="notes" rows="2"></textarea></label>
+    <div class="form-actions">
+      <span class="hint"><kbd>Ctrl</kbd>/<kbd>⌘</kbd> + <kbd>Enter</kbd> để lưu</span>
+      <button type="button" class="btn ghost" data-act="cancel">Huỷ</button>
+      <button type="submit" class="btn primary">Lưu từ</button>
+    </div>
+  </form>
+</template>
+
+<script src="app.js"></script>
+</body>
+</html>

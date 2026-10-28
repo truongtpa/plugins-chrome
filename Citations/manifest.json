@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "BibTeX Citation Maker",
   "version": "1.0",
-  "description": "Rút gọn & chuẩn hoá BibTeX, tạo @online từ URL, và lưu snippet code để chép nhanh.",
+  "description": "Rút gọn & chuẩn hoá BibTeX và tạo @online từ URL.",
   "permissions": ["activeTab", "tabs", "storage", "clipboardWrite", "clipboardRead"],
   "host_permissions": ["http://*/*", "https://*/*"],
   "action": {

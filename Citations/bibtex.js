@@ -323,5 +323,237 @@
     return base + year;
   }
 
-  global.BIB = { parse, clean, format, titleKey, deaccent, makeKey, normalizePages, normalizeAuthors };
+  /* ------------------------------------------- trích dẫn dạng văn bản */
+
+  const ACCENT = { "'": '́', '`': '̀', '^': '̂', '"': '̈', '~': '̃', '=': '̄',
+                   '.': '̇', u: '̆', v: '̌', H: '̋', c: '̧', k: '̨',
+                   r: '̊', d: '̣', b: '̱' };
+  const SYMBOL = { o: 'ø', O: 'Ø', ss: 'ß', ae: 'æ', AE: 'Æ', oe: 'œ', OE: 'Œ', aa: 'å', AA: 'Å', l: 'ł', L: 'Ł',
+                   i: 'ı', j: 'ȷ', ldots: '…', dots: '…', textendash: '–', textemdash: '—', textregistered: '®',
+                   texttrademark: '™', copyright: '©', textsc: '', LaTeX: 'LaTeX', TeX: 'TeX', BibTeX: 'BibTeX' };
+
+  /** Bỏ cú pháp LaTeX: {\"o} -> ö, \& -> &, -- -> –, \textit{x} -> x, bỏ ngoặc nhọn. */
+  function toPlain(s) {
+    return String(s || '')
+      .replace(/\\([`'^"~=.])\s*(?:\{\s*\\?([A-Za-z])\s*\}|\\?([A-Za-z]))/g,
+        (_, a, x, y) => (x || y) + ACCENT[a])
+      .replace(/\\([uvHckrdb])(?:\s*\{\s*\\?([A-Za-z])\s*\}|\s+([A-Za-z]))/g,
+        (_, a, x, y) => (x || y) + ACCENT[a])
+      .replace(/\\([A-Za-z]+)(?![A-Za-z])\s*(?:\{\})?/g, (m, c) => (c in SYMBOL ? SYMBOL[c] : m))
+      .replace(/\\([&%$#_{}])/g, (_, c) => '\u0000' + c.charCodeAt(0) + '\u0000')
+      .replace(/\\[A-Za-z]+\*?\s*/g, '')                   // \textit, \emph, \url… : giữ nội dung
+      .replace(/\$([^$]*)\$/g, '$1')
+      .replace(/---/g, '—').replace(/--/g, '–')
+      .replace(/``/g, '“').replace(/''/g, '”')
+      .replace(/~/g, ' ')
+      .replace(/[{}]/g, '')
+      .replace(/\u0000(\d+)\u0000/g, (_, n) => String.fromCharCode(+n))
+      .replace(/\s+/g, ' ')
+      .trim()
+      .normalize('NFC');
+  }
+
+  /** Tách danh sách tác giả theo " and " ở ngoài ngoặc, giữ nguyên LaTeX của từng tên. */
+  function splitNames(v) {
+    const out = [];
+    let depth = 0, cur = '';
+    const s = String(v || '');
+    for (let k = 0; k < s.length; k++) {
+      const c = s[k];
+      if (c === '{') depth++;
+      else if (c === '}') depth--;
+      if (depth === 0 && /^\s+and\s/i.test(s.slice(k))) {
+        out.push(cur.trim());
+        cur = '';
+        k += s.slice(k).match(/^\s+and/i)[0].length - 1;
+        continue;
+      }
+      cur += c;
+    }
+    out.push(cur.trim());
+    return out.filter(Boolean);
+  }
+
+  /** -> { last, given, org } hoặc { others: true } */
+  function parseName(raw) {
+    const r = raw.trim();
+    if (/^others$/i.test(r)) return { others: true };
+    if (/^\{.*\}$/.test(r)) {
+      // cả tên nằm trong một cặp ngoặc: "{Apache Software Foundation}" -> tổ chức, không đảo
+      let d = 0, whole = true;
+      for (let k = 0; k < r.length; k++) {
+        if (r[k] === '{') d++; else if (r[k] === '}') d--;
+        if (d === 0 && k < r.length - 1) { whole = false; break; }
+      }
+      if (whole) return { org: toPlain(r) };
+    }
+    const parts = r.split(',').map((x) => x.trim());
+    if (parts.length >= 2) {
+      return { last: toPlain(parts[0]), given: toPlain(parts[parts.length - 1]) };
+    }
+    // "First von Last": tách theo khoảng trắng ngoài ngoặc
+    const words = [];
+    let d = 0, w = '';
+    for (const c of r) {
+      if (c === '{') d++; else if (c === '}') d--;
+      if (d === 0 && /\s/.test(c)) { if (w) words.push(w); w = ''; } else w += c;
+    }
+    if (w) words.push(w);
+    if (words.length < 2) return { last: toPlain(r), given: '' };
+    let cut = words.length - 1;
+    while (cut > 1 && /^[a-z]/.test(words[cut - 1])) cut--;    // von, van der, de la…
+    return { last: toPlain(words.slice(cut).join(' ')), given: toPlain(words.slice(0, cut).join(' ')) };
+  }
+
+  /** "Jean-Paul Marie" -> "J.-P. M." */
+  const initials = (given) => given.split(/\s+/).filter(Boolean).map((w) =>
+    w.split('-').map((p) => (/^[A-Za-zÀ-ỹ]/.test(p) ? p[0].toUpperCase() + '.' : p)).join('-')
+  ).join(' ');
+
+  function namesIEEE(v) {
+    const ns = splitNames(v).map(parseName);
+    const others = ns.some((n) => n.others);
+    let list = ns.filter((n) => !n.others).map((n) => n.org || [initials(n.given), n.last].filter(Boolean).join(' '));
+    if (list.length > 6 || (others && list.length)) return list[0] + ' et al.';
+    if (list.length <= 2) return list.join(' and ');
+    return list.slice(0, -1).join(', ') + ', and ' + list[list.length - 1];
+  }
+
+  function namesAPA(v) {
+    const ns = splitNames(v).map(parseName);
+    const others = ns.some((n) => n.others);
+    const list = ns.filter((n) => !n.others).map((n) => n.org || [n.last, initials(n.given)].filter(Boolean).join(', '));
+    if (!list.length) return '';
+    if (others || list.length > 20) return list.slice(0, 19).join(', ') + ', et al.';
+    if (list.length === 1) return list[0];
+    return list.slice(0, -1).join(', ') + ', & ' + list[list.length - 1];
+  }
+
+  const ord = (n) => {
+    const x = +n;
+    if (!x) return n;
+    const s = x % 100 >= 11 && x % 100 <= 13 ? 'th' : ({ 1: 'st', 2: 'nd', 3: 'rd' }[x % 10] || 'th');
+    return x + s;
+  };
+
+  /** Thêm dấu chấm cuối nếu chuỗi chưa kết thúc bằng dấu câu. */
+  const endDot = (s) => (/[.?!]$/.test(s) ? s : s + '.');
+
+  /**
+   * Định dạng một entry (đã clean) thành trích dẫn văn bản.
+   * Trả về mảng đoạn [{ t, i }] — i = in nghiêng — để xuất cả text thuần lẫn HTML.
+   */
+  function cite(e, style) {
+    const raw = {};
+    for (const f of e.fields) raw[f.name] = f.value;
+    const g = (n) => toPlain(raw[n]);
+    const year = (String(raw.date || raw.year || '').match(/\d{4}/) || [''])[0];
+    const pages = g('pages');
+    const doi = g('doi');
+    const url = g('url');
+    const container = g('journaltitle') || g('journal') || g('booktitle');
+    const publisher = g('publisher') || g('institution') || g('organization') || g('school');
+    const segs = [];
+    const add = (t, i) => { if (t) segs.push({ t, i: !!i }); };
+
+    if (style === 'apa') {
+      const who = raw.author ? namesAPA(raw.author) : raw.editor ? namesAPA(raw.editor) + ' (Ed.)' : '';
+      const title = g('title');
+      const italicTitle = !['article', 'inproceedings', 'incollection', 'inbook'].includes(e.type);
+      if (who) add(endDot(who) + ' ');
+      add(`(${year || 'n.d.'}). `);
+      if (italicTitle) { add(title, true); add('. '); } else add(endDot(title) + ' ');
+      if (e.type === 'article') {
+        if (container) add(container, true);
+        if (raw.volume) { add(', '); add(g('volume'), true); }
+        if (raw.number) add(`(${g('number')})`);
+        if (pages) add(', ' + pages);
+        if (container || raw.volume || pages) add('. ');
+      } else if (['inproceedings', 'incollection', 'inbook'].includes(e.type)) {
+        if (container) { add('In '); add(container, true); add(pages ? ` (pp. ${pages}). ` : '. '); }
+        if (publisher) add(endDot(publisher) + ' ');
+      } else if (e.type === 'thesis') {
+        add(`[${/ma/i.test(raw.type || '') ? "Master's thesis" : 'Doctoral dissertation'}${publisher ? ', ' + publisher : ''}]. `);
+      } else if (e.type === 'online' || e.type === 'misc') {
+        // tên site thường đã nằm ở author dạng tổ chức
+      } else if (publisher) add(endDot(publisher) + ' ');
+      if (doi) add('https://doi.org/' + doi);
+      else if (url) add(url);
+    } else {
+      // IEEE
+      const who = raw.author ? namesIEEE(raw.author) : raw.editor ? namesIEEE(raw.editor) + ', Ed.' : '';
+      const title = g('title');
+      const tail = [];
+      if (who) add(who + ', ');
+      switch (e.type) {
+        case 'article':
+          add(`“${title},” `);
+          add(container, true);
+          if (raw.volume) tail.push('vol. ' + g('volume'));
+          if (raw.number) tail.push('no. ' + g('number'));
+          if (pages) tail.push((/[–-]/.test(pages) ? 'pp. ' : 'p. ') + pages);
+          tail.push(year);
+          break;
+        case 'inproceedings':
+        case 'incollection':
+        case 'inbook':
+          add(`“${title},” `);
+          if (container) { add('in '); add(container, true); }
+          if (publisher) tail.push(publisher);
+          tail.push(year);
+          if (pages) tail.push((/[–-]/.test(pages) ? 'pp. ' : 'p. ') + pages);
+          break;
+        case 'book':
+        case 'manual':
+          add(title, true);
+          if (raw.edition) add(`, ${/^\d+$/.test(raw.edition) ? ord(raw.edition) : g('edition')} ed`);
+          if (publisher || year) add('. ');
+          if (publisher) tail.push(publisher);
+          tail.push(year);
+          break;
+        case 'thesis':
+          add(`“${title},” `);
+          tail.push(/ma/i.test(raw.type || '') ? "M.S. thesis" : 'Ph.D. dissertation');
+          if (publisher) tail.push(publisher);
+          tail.push(year);
+          break;
+        case 'techreport':
+        case 'report':
+          add(`“${title},” `);
+          if (publisher) tail.push(publisher);
+          tail.push(raw.number ? 'Tech. Rep. ' + g('number') : 'Tech. Rep.');
+          tail.push(year);
+          break;
+        case 'online':
+        case 'misc':
+          add(`“${title}.” `);
+          if (year) add(year + '. ');
+          if (url) add('[Online]. Available: ' + url);
+          if (raw.urldate) add(` (accessed ${g('urldate')})`);
+          else if (raw.note) add(` (${g('note').replace(/^Accessed:\s*/i, 'accessed ')})`);
+          break;
+        default:
+          add(`“${title},” `);
+          if (container) add(container, true);
+          if (publisher) tail.push(publisher);
+          tail.push(year);
+      }
+      const rest = tail.filter(Boolean);
+      if (rest.length) {
+        const last = segs[segs.length - 1];
+        add((last && last.i ? ', ' : '') + rest.join(', '));
+      }
+      if (e.type !== 'online' && e.type !== 'misc') {
+        add('.');
+        if (doi) add(' doi: ' + doi + '.');
+      }
+      // dọn ", ," hoặc khoảng trắng thừa do trường trống
+      segs.forEach((s) => { s.t = s.t.replace(/,\s*,/g, ',').replace(/ {2,}/g, ' '); });
+    }
+    if (segs.length) segs[segs.length - 1].t = segs[segs.length - 1].t.trimEnd();
+    return segs;
+  }
+
+  global.BIB = { parse, clean, format, titleKey, deaccent, makeKey, normalizePages, normalizeAuthors,
+                 toPlain, cite };
 })(window);

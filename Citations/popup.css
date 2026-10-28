@@ -32,18 +32,29 @@
 }
 
 * { box-sizing: border-box; }
+html { overflow-x: hidden; }
+/* Popup Chrome cao tối đa 600px: giữ body trong giới hạn đó, để ô kết quả tự co
+   lại thay vì làm cả popup hiện thanh cuộn. */
 body {
   width: 470px;
+  max-height: 600px;
+  display: flex;
+  flex-direction: column;
   margin: 0;
   padding: 0 12px 12px;
   background: var(--bg);
   color: var(--fg);
   font: 13px/1.45 -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
 }
-header { padding: 10px 0 6px; }
+header { padding: 10px 0 6px; flex: none; }
+
+.panel { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; }
+.panel[hidden] { display: none; }
+.panel > * { flex: none; }
+.panel > #out-bib, .panel > #out-url { flex: 1 1 auto; min-height: 90px; }
 h1 { margin: 0; font-size: 14px; font-weight: 650; letter-spacing: .2px; }
 
-.tabs { display: flex; gap: 4px; border-bottom: 1px solid var(--line); margin-bottom: 10px; }
+.tabs { flex: none; display: flex; gap: 4px; border-bottom: 1px solid var(--line); margin-bottom: 10px; }
 .tab {
   flex: 1; padding: 8px 6px; border: 0; border-bottom: 2px solid transparent;
   background: none; color: var(--muted); font: inherit; font-weight: 600; cursor: pointer;
@@ -73,6 +84,10 @@ button.primary { background: var(--accent); border-color: var(--accent); color: 
 button.primary:hover { filter: brightness(1.08); color: var(--accent-fg); }
 button.ghost { background: none; color: var(--muted); }
 button:disabled { opacity: .55; cursor: default; filter: none; }
+select {
+  padding: 6px 4px; border: 1px solid var(--line); border-radius: 6px;
+  background: var(--field); color: var(--fg); font: inherit; font-weight: 600; cursor: pointer;
+}
 
 .opts { display: flex; flex-wrap: wrap; gap: 4px 12px; margin-top: 8px; font-size: 12px; color: var(--muted); }
 .opts label { display: inline-flex; align-items: center; gap: 4px; cursor: pointer; }
@@ -96,42 +111,3 @@ code { font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 11px; }
 .meta .f { display: flex; align-items: center; gap: 6px; margin-top: 5px; }
 .meta .f span { width: 58px; flex: none; font-size: 11px; color: var(--muted); font-family: ui-monospace, Menlo, monospace; }
 
-/* ------------------------------------------------------ tab 3 · snippet */
-
-.snip-toolbar { margin-top: 10px; }
-.snip-toolbar input { flex: 1; }
-
-.snips { list-style: none; margin: 8px 0 0; padding: 0; }
-.snip {
-  border: 1px solid var(--line); border-radius: 6px; background: var(--field);
-  margin-bottom: 6px; overflow: hidden;
-}
-.snip.open { border-color: var(--accent); }
-
-.snip-head { display: flex; align-items: center; gap: 4px; padding: 5px 6px 5px 8px; }
-.snip-name {
-  flex: 1; min-width: 0; padding: 2px 0; border: 0; background: none; color: var(--fg);
-  font: inherit; font-weight: 600; text-align: left; cursor: pointer;
-  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-}
-.snip-name:hover { color: var(--accent); }
-.snip-name .caret { display: inline-block; width: 10px; color: var(--muted); font-size: 10px; }
-.snip-meta { flex: none; font-size: 11px; color: var(--muted); margin-right: 2px; }
-
-.ic {
-  flex: none; padding: 3px 7px; font-size: 11px; font-weight: 600;
-  border-radius: 5px; background: var(--bg);
-}
-.ic.armed { background: var(--err-line); border-color: var(--err-line); color: #fff; }
-.ic.armed:hover { color: #fff; }
-
-.snip-body {
-  margin: 0; padding: 8px 10px; border-top: 1px solid var(--line);
-  max-height: 230px; overflow: auto;
-  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-  font-size: 11.5px; line-height: 1.5; white-space: pre; tab-size: 2;
-}
-
-.hit { background: rgba(255, 213, 0, .35); border-radius: 2px; }
-
-.empty { margin: 14px 4px; color: var(--muted); font-size: 12px; text-align: center; }

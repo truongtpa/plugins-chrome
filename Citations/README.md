@@ -1,6 +1,6 @@
 # BibTeX Citation Maker
 
-Chrome extension (Manifest V3) tạo và dọn dẹp trích dẫn BibTeX, kèm một kho snippet để chép nhanh. Gồm 3 tab.
+Chrome extension (Manifest V3) tạo và dọn dẹp trích dẫn BibTeX. Gồm 2 tab.
 
 ## Cài đặt
 
@@ -38,6 +38,11 @@ Kết quả:
 Tuỳ chọn: giữ `doi`, giữ `url`, tắt `year`→`date`, căn thẳng dấu `=`.
 Phím tắt: `Ctrl`/`Cmd` + `Enter` trong ô nhập.
 
+**Chép dạng text (PPTX)**: chuyển kết quả thành trích dẫn văn bản kiểu **IEEE** hoặc
+**APA** (chọn ở ô bên cạnh) rồi chép vào clipboard — bỏ hết cú pháp LaTeX
+(`{\"o}` → `ö`, `--` → `–`…), tên tạp chí/hội nghị in nghiêng khi dán vào
+PowerPoint/Word. Nhiều entry với IEEE thì đánh số `[1]`, `[2]`…
+
 ## Tab 2 · Từ URL
 
 Nhập URL (hoặc bấm **Tab hiện tại**) → extension tải trang, đọc metadata
@@ -60,27 +65,11 @@ Nhập URL (hoặc bấm **Tab hiện tại**) → extension tải trang, đọc
 - Các trường `key / author / title / year / url / ngày truy cập` sửa tay được,
   kết quả cập nhật ngay — hữu ích khi trang bị Cloudflare chặn hoặc thiếu metadata.
 
-## Tab 3 · Snippet
-
-Kho lưu các đoạn code / lệnh / mẫu văn bản hay dùng.
-
-- Nhập **tên** + **nội dung** → **Thêm vào danh sách**. Bỏ trống tên thì
-  dòng đầu tiên của nội dung được dùng làm tên.
-- Mỗi mục trong danh sách có: bấm vào tên để xem/ẩn nội dung, **Chép**
-  (đưa thẳng vào clipboard), **Sửa** (nạp ngược lên form), **Xoá**
-  (bấm hai lần: lần đầu nút đổi thành `Xoá?` để xác nhận).
-- Ô tìm kiếm lọc theo cả tên lẫn nội dung (hiện khi có từ 2 snippet trở lên).
-- `Ctrl`/`Cmd` + `Enter` trong ô nội dung = lưu; phím `Tab` chèn 2 dấu cách.
-
-Dữ liệu nằm trong `chrome.storage.local` của extension: chỉ ở máy này, không
-đồng bộ lên tài khoản Google, và bị xoá nếu gỡ extension. Popup đang mở sẽ tự
-cập nhật khi một cửa sổ khác thay đổi danh sách.
-
 ## Cấu trúc
 
 | File | Vai trò |
 | --- | --- |
 | `manifest.json` | khai báo MV3 |
-| `popup.html` / `popup.css` / `popup.js` | giao diện và luồng xử lý 3 tab |
+| `popup.html` / `popup.css` / `popup.js` | giao diện và luồng xử lý 2 tab |
 | `bibtex.js` | parser, bộ chuẩn hoá và bộ định dạng BibTeX |
 | `background.js` | service worker tải HTML của URL (popup không parse được HTML trong SW) |

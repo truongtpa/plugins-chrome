@@ -1,4 +1,4 @@
-/* popup.js — điều khiển 3 tab */
+/* popup.js — điều khiển 2 tab */
 'use strict';
 
 const $ = (id) => document.getElementById(id);
@@ -11,8 +11,7 @@ const todayISO = () => {
 
 const TABS = [
   { btn: 'tab-btn-clean', panel: 'panel-clean' },
-  { btn: 'tab-btn-url', panel: 'panel-url' },
-  { btn: 'tab-btn-snip', panel: 'panel-snip' }
+  { btn: 'tab-btn-url', panel: 'panel-url' }
 ];
 
 function showTab(idx) {
@@ -123,6 +122,39 @@ $('btn-clear1').addEventListener('click', () => {
   $('in-bib').value = ''; $('out-bib').value = ''; $('report1').hidden = true; $('in-bib').focus();
 });
 $('btn-copy1').addEventListener('click', () => copyFrom('out-bib', 'status1'));
+/** Chép kết quả dạng trích dẫn văn bản: text/html (giữ in nghiêng khi dán vào PPTX) + text/plain. */
+async function copyAsText() {
+  const src = $('out-bib').value;
+  if (!src.trim()) return flash('status1', 'Chưa có gì để chép.', 'err');
+  const { entries } = BIB.parse(src);
+  if (!entries.length) return flash('status1', 'Không đọc được entry nào.', 'err');
+
+  const style = $('opt-style').value;
+  const numbered = style === 'ieee' && entries.length > 1;
+  const items = entries.map((e, k) => {
+    const segs = BIB.cite(e, style);
+    if (numbered) segs.unshift({ t: `[${k + 1}] `, i: false });
+    return segs;
+  });
+  const plain = items.map((segs) => segs.map((s) => s.t).join('')).join('\n');
+  const html = items.map((segs) =>
+    '<p>' + segs.map((s) => (s.i ? `<i>${esc(s.t)}</i>` : esc(s.t))).join('') + '</p>'
+  ).join('');
+
+  try {
+    await navigator.clipboard.write([new ClipboardItem({
+      'text/plain': new Blob([plain], { type: 'text/plain' }),
+      'text/html': new Blob([html], { type: 'text/html' })
+    })]);
+  } catch {
+    try { await navigator.clipboard.writeText(plain); }
+    catch { return flash('status1', 'Không ghi được clipboard.', 'err'); }
+  }
+  flash('status1', `✓ Đã chép ${entries.length} mục`, 'ok');
+}
+
+$('btn-copytext').addEventListener('click', copyAsText);
+$('opt-style').addEventListener('change', () => chrome.storage.local.set({ 'opt-style': $('opt-style').value }));
 $('btn-paste').addEventListener('click', async () => {
   try {
     const t = await navigator.clipboard.readText();
@@ -354,201 +386,17 @@ $('btn-tab').addEventListener('click', async () => {
   }
 });
 
-/* ====================================================== TAB 3 · snippet */
-
-let snippets = [];          // [{ id, name, code, created, updated }]
-let editingId = null;
-let armedDelete = null;     // id đang chờ xác nhận xoá
-
-const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
-
-function ago(ts) {
-  const s = Math.max(0, (Date.now() - ts) / 1000);
-  if (s < 60) return 'vừa xong';
-  const m = s / 60;
-  if (m < 60) return Math.floor(m) + ' phút trước';
-  const h = m / 60;
-  if (h < 24) return Math.floor(h) + ' giờ trước';
-  const d = h / 24;
-  if (d < 30) return Math.floor(d) + ' ngày trước';
-  return new Date(ts).toLocaleDateString('vi-VN');
-}
-
-function saveSnips(after) {
-  chrome.storage.local.set({ snippets }, () => {
-    const err = chrome.runtime.lastError;
-    if (err) flash('status3', 'Không lưu được: ' + err.message, 'err');
-    else if (after) after();
-  });
-}
-
-/** bôi vàng phần khớp từ khoá trong chuỗi đã escape */
-function mark(text, q) {
-  if (!q) return esc(text);
-  const i = text.toLowerCase().indexOf(q);
-  if (i < 0) return esc(text);
-  return esc(text.slice(0, i)) + '<mark class="hit">' + esc(text.slice(i, i + q.length)) +
-         '</mark>' + esc(text.slice(i + q.length));
-}
-
-function renderSnips() {
-  const q = $('snip-search').value.trim().toLowerCase();
-  const list = $('snip-list');
-  const open = new Set([...list.querySelectorAll('.snip.open')].map((el) => el.dataset.id));
-
-  const shown = snippets.filter((s) =>
-    !q || s.name.toLowerCase().includes(q) || s.code.toLowerCase().includes(q));
-
-  list.innerHTML = shown.map((s) => {
-    const lines = s.code.split('\n').length;
-    const isOpen = open.has(s.id);
-    return `<li class="snip${isOpen ? ' open' : ''}" data-id="${esc(s.id)}">
-      <div class="snip-head">
-        <button class="snip-name" data-act="toggle" title="Bấm để xem nội dung"><span class="caret">${isOpen ? '▾' : '▸'}</span> ${mark(s.name, q)}</button>
-        <span class="snip-meta">${lines} dòng · ${esc(ago(s.updated))}</span>
-        <button class="ic" data-act="copy" title="Sao chép nội dung">Chép</button>
-        <button class="ic" data-act="edit" title="Sửa snippet">Sửa</button>
-        <button class="ic" data-act="del" title="Xoá snippet">Xoá</button>
-      </div>
-      <pre class="snip-body"${isOpen ? '' : ' hidden'}>${esc(s.code)}</pre>
-    </li>`;
-  }).join('');
-
-  const total = snippets.length;
-  $('snip-count').textContent = total ? (q ? `${shown.length}/${total}` : `${total} snippet`) : '';
-  $('snip-empty').hidden = total > 0;
-  if (total && !shown.length) {
-    list.innerHTML = '<li class="empty">Không có snippet nào khớp từ khoá.</li>';
-  }
-  $('snip-search').parentElement.hidden = total < 2;
-  armedDelete = null;
-}
-
-function resetForm() {
-  editingId = null;
-  $('snip-name').value = '';
-  $('snip-code').value = '';
-  $('btn-snip-save').textContent = 'Thêm vào danh sách';
-  $('btn-snip-cancel').hidden = true;
-}
-
-function submitSnip() {
-  const code = $('snip-code').value.replace(/\s+$/, '');
-  if (!code.trim()) {
-    flash('status3', 'Nội dung đang trống.', 'err');
-    return $('snip-code').focus();
-  }
-  // không có tên thì lấy dòng đầu tiên làm tên
-  let name = $('snip-name').value.trim();
-  if (!name) name = code.split('\n')[0].trim().slice(0, 60) || 'Snippet';
-
-  if (editingId) {
-    const s = snippets.find((x) => x.id === editingId);
-    if (s) { s.name = name; s.code = code; s.updated = Date.now(); }
-    snippets.sort((a, b) => b.updated - a.updated);
-  } else {
-    snippets.unshift({ id: uid(), name, code, created: Date.now(), updated: Date.now() });
-  }
-
-  const wasEdit = !!editingId;
-  saveSnips(() => {
-    resetForm();
-    renderSnips();
-    flash('status3', wasEdit ? '✓ Đã cập nhật' : '✓ Đã lưu', 'ok');
-    $('snip-name').focus();
-  });
-}
-
-async function copySnip(s) {
-  try {
-    await navigator.clipboard.writeText(s.code);
-    flash('status3', '✓ Đã chép "' + s.name + '"', 'ok');
-  } catch {
-    flash('status3', 'Không chép được vào clipboard.', 'err');
-  }
-}
-
-$('btn-snip-save').addEventListener('click', submitSnip);
-$('btn-snip-cancel').addEventListener('click', () => { resetForm(); flash('status3', 'Đã huỷ sửa'); });
-$('snip-code').addEventListener('keydown', (e) => {
-  if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') submitSnip();
-});
-$('snip-name').addEventListener('keydown', (e) => {
-  if (e.key === 'Enter') { e.preventDefault(); $('snip-code').focus(); }
-});
-$('snip-search').addEventListener('input', renderSnips);
-
-// Tab trong ô nội dung = 2 dấu cách, không nhảy sang nút khác
-$('snip-code').addEventListener('keydown', (e) => {
-  if (e.key !== 'Tab' || e.shiftKey) return;
-  e.preventDefault();
-  const el = e.target, a = el.selectionStart, b = el.selectionEnd;
-  el.value = el.value.slice(0, a) + '  ' + el.value.slice(b);
-  el.selectionStart = el.selectionEnd = a + 2;
-});
-
-$('snip-list').addEventListener('click', (e) => {
-  const btn = e.target.closest('[data-act]');
-  if (!btn) return;
-  const li = btn.closest('.snip');
-  const id = li && li.dataset.id;
-  const s = snippets.find((x) => x.id === id);
-  if (!s) return;
-  const act = btn.dataset.act;
-
-  if (act !== 'del' && armedDelete) {                 // bấm chỗ khác thì huỷ trạng thái chờ xoá
-    const armed = $('snip-list').querySelector('.ic.armed');
-    if (armed) { armed.classList.remove('armed'); armed.textContent = 'Xoá'; }
-    armedDelete = null;
-  }
-
-  if (act === 'toggle') {
-    const open = li.classList.toggle('open');
-    li.querySelector('.snip-body').hidden = !open;
-    li.querySelector('.caret').textContent = open ? '▾' : '▸';
-  } else if (act === 'copy') {
-    copySnip(s);
-  } else if (act === 'edit') {
-    editingId = s.id;
-    $('snip-name').value = s.name;
-    $('snip-code').value = s.code;
-    $('btn-snip-save').textContent = 'Cập nhật';
-    $('btn-snip-cancel').hidden = false;
-    $('snip-name').focus();
-    $('snip-name').scrollIntoView({ block: 'nearest' });
-  } else if (act === 'del') {
-    if (armedDelete !== id) {                         // bấm lần 1: hỏi lại
-      armedDelete = id;
-      btn.classList.add('armed');
-      btn.textContent = 'Xoá?';
-      return;
-    }
-    snippets = snippets.filter((x) => x.id !== id);   // bấm lần 2: xoá thật
-    if (editingId === id) resetForm();
-    saveSnips(() => { renderSnips(); flash('status3', 'Đã xoá "' + s.name + '"'); });
-  }
-});
-
-// đồng bộ nếu popup khác / cửa sổ khác vừa đổi danh sách
-chrome.storage.onChanged.addListener((changes, area) => {
-  if (area !== 'local' || !changes.snippets) return;
-  snippets = Array.isArray(changes.snippets.newValue) ? changes.snippets.newValue : [];
-  renderSnips();
-});
-
 /* --------------------------------------------------------------- khởi tạo */
 
 chrome.storage.local.get(
-  ['activeTab', 'opt-doi', 'opt-url', 'opt-date', 'opt-align', 'opt-urldate', 'opt-strip', 'snippets'],
+  ['activeTab', 'opt-doi', 'opt-url', 'opt-date', 'opt-align', 'opt-urldate', 'opt-strip', 'opt-style'],
   (st) => {
+    if (st['opt-style'] === 'apa') $('opt-style').value = 'apa';
     ['opt-doi', 'opt-url', 'opt-align', 'opt-urldate'].forEach((id) => { if (st[id] === true) $(id).checked = true; });
     ['opt-date', 'opt-strip'].forEach((id) => { if (st[id] === false) $(id).checked = false; });
 
-    snippets = Array.isArray(st.snippets) ? st.snippets : [];
-    renderSnips();
-
-    const idx = [0, 1, 2].includes(st.activeTab) ? st.activeTab : 0;
+    const idx = [0, 1].includes(st.activeTab) ? st.activeTab : 0;
     showTab(idx);
-    [$('in-bib'), $('in-url'), $('snip-name')][idx].focus();
+    [$('in-bib'), $('in-url')][idx].focus();
   }
 );

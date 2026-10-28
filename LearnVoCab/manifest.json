@@ -1,0 +1,42 @@
+{
+  "manifest_version": 3,
+  "name": "LearnVocab – Học từ vựng đa ngôn ngữ",
+  "version": "1.0",
+  "description": "Sổ từ vựng nhiều ngôn ngữ dạng full page: thêm từ tự điền bằng AI (OpenAI, Claude, Gemini, Ollama hoặc API tuỳ chỉnh), lịch theo ngày/tuần/tháng, tìm kiếm, ôn flashcard lặp lại ngắt quãng.",
+  "permissions": [
+    "storage",
+    "unlimitedStorage"
+  ],
+  "host_permissions": [
+    "https://api.openai.com/*",
+    "https://api.anthropic.com/*",
+    "https://generativelanguage.googleapis.com/*",
+    "https://openrouter.ai/*",
+    "https://api.groq.com/*",
+    "https://api.deepseek.com/*",
+    "https://api.mistral.ai/*",
+    "https://api.x.ai/*"
+  ],
+  "action": {
+    "default_title": "LearnVocab – mở sổ từ vựng",
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "32": "icons/icon32.png",
+      "48": "icons/icon48.png",
+      "128": "icons/icon128.png"
+    }
+  },
+  "icons": {
+    "16": "icons/icon16.png",
+    "32": "icons/icon32.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  },
+  "background": {
+    "service_worker": "background.js"
+  },
+  "optional_host_permissions": [
+    "https://*/*",
+    "http://*/*"
+  ]
+}

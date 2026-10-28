@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <title>Chrome Notes</title>
+  <link rel="stylesheet" href="lib/katex.min.css" />
+  <link rel="stylesheet" href="notes.css" />
+</head>
+<body>
+  <!-- Bộ icon nét mảnh dùng chung -->
+  <svg width="0" height="0" style="position:absolute" aria-hidden="true">
+    <defs>
+      <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+      <symbol id="i-more" viewBox="0 0 24 24"><circle cx="5" cy="12" r="1.3" fill="currentColor"/><circle cx="12" cy="12" r="1.3" fill="currentColor"/><circle cx="19" cy="12" r="1.3" fill="currentColor"/></symbol>
+      <symbol id="i-x" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></symbol>
+      <symbol id="i-md" viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M6 15V9l2.5 3L11 9v6M15.5 9v6M13.5 13l2 2 2-2"/></symbol>
+    </defs>
+  </svg>
+
+  <div class="window">
+    <header class="toolbar">
+      <div class="tabs-wrap">
+        <ul id="tabs" class="tabs" role="tablist"></ul>
+        <button id="addTab" class="icon-btn add" title="Thêm tab mới (Alt+N)"><svg><use href="#i-plus"/></svg></button>
+      </div>
+      <div class="actions">
+        <button id="menuBtn" class="icon-btn" title="Tuỳ chọn"><svg><use href="#i-more"/></svg></button>
+        <div id="menu" class="menu" hidden>
+          <button data-act="rename">Đổi tên tab<kbd>F2</kbd></button>
+          <button data-act="duplicate">Nhân bản tab</button>
+          <div class="sep"></div>
+          <button data-act="wrap">Tự xuống dòng<kbd>Alt+Z</kbd></button>
+          <button data-act="source">Xem mã nguồn<kbd>Ctrl+/</kbd></button>
+          <div class="sep"></div>
+          <button data-act="exportMd">Xuất tab ra .md</button>
+          <button data-act="exportAll">Sao lưu tất cả (.json)</button>
+          <button data-act="import">Nhập .md / .json…</button>
+          <div class="sep"></div>
+          <button data-act="openPage">Mở toàn trang</button>
+          <button data-act="openPanel">Mở ở Side Panel</button>
+          <div class="sep"></div>
+          <button data-act="delete">Đóng tab<kbd>Alt+W</kbd></button>
+        </div>
+      </div>
+    </header>
+
+    <main id="editor" class="editor-wrap"></main>
+
+    <footer class="status">
+      <span class="brand"><svg><use href="#i-md"/></svg>Markdown</span>
+      <span id="pos">Dòng 1, Cột 1</span>
+      <span id="count">0 từ · 0 ký tự</span>
+      <span id="saved">Đã lưu</span>
+    </footer>
+  </div>
+
+  <input type="file" id="importFile" accept=".md,.markdown,.txt,.json,text/markdown,text/plain,application/json" multiple hidden />
+  <script src="lib/marked.min.js"></script>
+  <script src="lib/purify.min.js"></script>
+  <script src="lib/katex.min.js"></script>
+  <script src="markdown.js"></script>
+  <script src="lib/editor.bundle.js"></script>
+  <script src="notes.js"></script>
+</body>
+</html>

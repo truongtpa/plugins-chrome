@@ -1,0 +1,418 @@
+/* Màu theo VS Code "Light Modern" / "Dark Modern" */
+:root {
+  --editor: #ffffff;
+  --chrome: #f8f8f8;
+  --border: #e5e5e5;
+  --text: #3b3b3b;
+  --muted: #868686;
+  --tab-active-fg: #3b3b3b;
+  --tab-hover: #ffffff;
+  --accent: #005fb8;
+  --gutter: #9a9a9a;
+  --gutter-cur: #171184;
+  --cur-line: #f3f3f3;
+  --selection: rgba(0, 120, 215, 0.22);
+  --menu-bg: #f8f8f8;
+  --menu-border: #cecece;
+  --menu-sel: #005fb8;
+  --input-bg: #ffffff;
+  --icon-hover: rgba(184, 184, 184, 0.31);
+  --status-bg: #005fb8;
+  --backdrop: #e4e4e4;
+  /* Màu cú pháp Markdown */
+  --t-h: #0f4a85;
+  --t-mark: #a0a0a0;
+  --t-list: #0451a5;
+  --t-code: #a31515;
+  --t-math: #af00db;
+  --t-link: #267f99;
+  --t-url: #0070c1;
+  --t-bold: #001080;
+  --t-em: #098658;
+  --t-quote: #008000;
+  /* Preview */
+  --md-code-bg: rgba(175, 184, 193, 0.2);
+  --md-pre-bg: #f6f8fa;
+  --md-line: #d1d9e0;
+  --md-link: #0969da;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --editor: #1f1f1f;
+    --chrome: #181818;
+    --border: #2b2b2b;
+    --text: #cccccc;
+    --muted: #9d9d9d;
+    --tab-active-fg: #ffffff;
+    --tab-hover: #1f1f1f;
+    --accent: #0078d4;
+    --gutter: #6e7681;
+    --gutter-cur: #cccccc;
+    --cur-line: #282828;
+    --selection: rgba(38, 119, 200, 0.4);
+    --menu-bg: #1f1f1f;
+    --menu-border: #454545;
+    --menu-sel: #0078d4;
+    --input-bg: #313131;
+    --icon-hover: rgba(90, 93, 94, 0.31);
+    --status-bg: #0078d4;
+    --backdrop: #0f0f0f;
+    --t-h: #569cd6;
+    --t-mark: #6e7681;
+    --t-list: #6796e6;
+    --t-code: #ce9178;
+    --t-math: #c586c0;
+    --t-link: #4ec9b0;
+    --t-url: #3794ff;
+    --t-bold: #dcdcaa;
+    --t-em: #b5cea8;
+    --t-quote: #6a9955;
+    --md-code-bg: rgba(110, 118, 129, 0.4);
+    --md-pre-bg: #181818;
+    --md-line: #3d444d;
+    --md-link: #4daafc;
+  }
+}
+
+* { box-sizing: border-box; }
+html, body { height: 100%; margin: 0; }
+body {
+  width: 640px;
+  height: 560px;
+  background: var(--editor);
+  color: var(--text);
+  font: 13px/1.4 -apple-system, BlinkMacSystemFont, "Segoe WPC", "Segoe UI", system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+body.full { width: 100%; height: 100vh; }
+button { font: inherit; color: inherit; cursor: pointer; border: none; background: none; padding: 0; }
+svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; flex-shrink: 0; }
+
+/* Khung cửa sổ — ở chế độ toàn trang nổi lên như panel của VS Code */
+.window {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background: var(--editor);
+  overflow: hidden;
+}
+body.float {
+  display: grid;
+  place-items: center;
+  padding: 32px;
+  background: var(--backdrop);
+}
+body.float .window {
+  width: min(1280px, 100%);
+  height: min(860px, 100%);
+  border: 1px solid var(--menu-border);
+  border-radius: 8px;
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.04), 0 16px 48px rgba(0, 0, 0, 0.28);
+}
+
+/* Thanh tab */
+.toolbar {
+  display: flex;
+  align-items: stretch;
+  height: 35px;
+  background: var(--chrome);
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+.tabs-wrap { flex: 1; display: flex; align-items: center; min-width: 0; }
+.tabs-wrap .add { margin: 0 4px; }
+.tabs {
+  display: flex;
+  align-self: stretch;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  overflow-x: auto;
+  scrollbar-width: none;
+  min-width: 0;
+}
+.tabs::-webkit-scrollbar { display: none; }
+.tab {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  max-width: 180px;
+  min-width: 80px;
+  height: 35px;
+  padding: 0 6px 0 12px;
+  background: var(--chrome);
+  border-right: 1px solid var(--border);
+  color: var(--muted);
+  cursor: pointer;
+  user-select: none;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.tab::before {
+  content: "M↓";
+  flex-shrink: 0;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: -0.5px;
+  color: var(--t-list);
+  opacity: 0.75;
+}
+.tab:hover { background: var(--tab-hover); }
+.tab.active {
+  background: var(--editor);
+  color: var(--tab-active-fg);
+  height: 36px; /* che đường viền dưới */
+  box-shadow: inset 0 1px 0 var(--accent);
+}
+.tab.active::before { opacity: 1; }
+.tab .title { flex: 1; overflow: hidden; text-overflow: ellipsis; }
+.tab .close {
+  display: grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 5px;
+  color: inherit;
+  visibility: hidden;
+}
+.tab .close svg { width: 14px; height: 14px; }
+.tab:hover .close, .tab.active .close { visibility: visible; }
+.tab .close:hover { background: var(--icon-hover); }
+.tab input {
+  flex: 1;
+  min-width: 0;
+  width: 110px;
+  height: 22px;
+  font: inherit;
+  color: var(--text);
+  background: var(--input-bg);
+  border: 1px solid var(--accent);
+  border-radius: 2px;
+  padding: 0 4px;
+  outline: none;
+}
+.tab.dragging { opacity: 0.5; }
+.tab.drop-before { box-shadow: inset 2px 0 0 var(--accent); }
+.tab.drop-after { box-shadow: inset -2px 0 0 var(--accent); }
+
+/* Nút hành động bên phải */
+.actions { position: relative; display: flex; align-items: center; gap: 4px; padding: 0 6px; }
+.icon-btn {
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 5px;
+  color: var(--text);
+  flex-shrink: 0;
+}
+.icon-btn:hover, .icon-btn[aria-expanded="true"] { background: var(--icon-hover); }
+/* Context menu kiểu VS Code */
+.menu {
+  position: absolute;
+  right: 6px;
+  top: calc(100% - 2px);
+  z-index: 10;
+  min-width: 230px;
+  padding: 4px;
+  background: var(--menu-bg);
+  color: var(--text);
+  border: 1px solid var(--menu-border);
+  border-radius: 6px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.36);
+}
+.menu button {
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: 100%;
+  height: 26px;
+  padding: 0 12px 0 26px;
+  border-radius: 4px;
+  text-align: left;
+}
+.menu button.checked::before { content: "✓"; position: absolute; left: 9px; font-size: 12px; }
+.menu button:hover { background: var(--menu-sel); color: #fff; }
+.menu button:hover kbd { color: #fff; }
+.menu kbd {
+  margin-left: auto;
+  padding-left: 24px;
+  font-family: inherit;
+  font-size: 12px;
+  color: var(--muted);
+}
+.menu .sep { height: 1px; margin: 4px 0; background: var(--menu-border); }
+
+/* ---------- Editor live preview (CodeMirror) ---------- */
+.editor-wrap { flex: 1; display: flex; min-height: 0; background: var(--editor); }
+.cm-editor { flex: 1; height: 100%; min-width: 0; color: var(--text); background: var(--editor); }
+.cm-editor.cm-focused { outline: none; }
+.cm-editor .cm-scroller {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe WPC", "Segoe UI", system-ui, sans-serif;
+  font-size: 15px;
+  line-height: 1.7;
+  overflow: auto;
+}
+.cm-editor .cm-content { max-width: 820px; margin: 0 auto; padding: 18px 0 35vh; caret-color: var(--accent); }
+.cm-line { padding: 0 28px; }
+.cm-editor .cm-cursor, .cm-editor .cm-dropCursor { border-left: 2px solid var(--accent); }
+.cm-editor .cm-selectionBackground, .cm-editor.cm-focused .cm-selectionBackground, .cm-content ::selection { background: var(--selection) !important; }
+.cm-editor .cm-selectionMatch { background: color-mix(in srgb, var(--accent) 14%, transparent); }
+.cm-editor .cm-placeholder { color: var(--muted); font-style: italic; }
+
+/* Chữ */
+.tok-mark { color: var(--muted); opacity: 0.75; font-weight: 400; font-style: normal; }
+.tok-heading { color: var(--tab-active-fg); }
+.tok-link, .cm-link { color: var(--md-link); }
+.cm-link { cursor: pointer; text-decoration: underline; text-decoration-color: color-mix(in srgb, currentColor 35%, transparent); text-underline-offset: 3px; }
+.tok-url { color: var(--muted); }
+.tok-quote { color: var(--muted); }
+.tok-label { color: var(--muted); font-size: 12px; }
+.tok-code {
+  padding: 0.1em 0.3em;
+  border-radius: 4px;
+  background: var(--md-code-bg);
+  font-family: Menlo, Monaco, "SF Mono", Consolas, monospace;
+  font-size: 0.86em;
+}
+.cm-codeblock .tok-code, .cm-table-src .tok-code { padding: 0; background: none; font-size: inherit; }
+
+/* Tiêu đề */
+.cm-h { color: var(--tab-active-fg); font-weight: 650; line-height: 1.35; }
+.cm-h1 { font-size: 1.85em; padding-top: 0.5em; padding-bottom: 0.15em; }
+.cm-h2 { font-size: 1.45em; padding-top: 0.5em; padding-bottom: 0.1em; }
+.cm-h3 { font-size: 1.2em; padding-top: 0.35em; }
+.cm-h4 { font-size: 1.05em; padding-top: 0.25em; }
+.cm-h5, .cm-h6 { font-size: 0.95em; color: var(--muted); }
+
+/* Danh sách & checklist */
+.cm-bullet { display: inline-block; width: 1.1em; color: var(--accent); font-weight: 700; text-align: center; }
+.cm-list-num { color: var(--accent); }
+.cm-task { display: inline-flex; align-items: center; height: 1em; margin-right: 0.45em; vertical-align: -0.1em; }
+.cm-task input { width: 15px; height: 15px; margin: 0; accent-color: var(--accent); cursor: pointer; }
+.cm-task-done { color: var(--muted); text-decoration: line-through; text-decoration-color: color-mix(in srgb, currentColor 60%, transparent); }
+
+/* Trích dẫn, đường kẻ, code */
+.cm-line.cm-quote {
+  padding-left: 46px;
+  color: var(--muted);
+  background: linear-gradient(var(--md-line), var(--md-line)) 28px 0 / 3px 100% no-repeat;
+}
+.cm-line.cm-hr { background: linear-gradient(var(--md-line), var(--md-line)) 28px 50% / calc(100% - 56px) 2px no-repeat; }
+.cm-line.cm-codeblock, .cm-line.cm-table-src, .cm-line.cm-math-src, body.source .cm-editor .cm-scroller {
+  font-family: Menlo, Monaco, "SF Mono", Consolas, monospace;
+  font-size: 13px;
+  line-height: 1.6;
+}
+.cm-line.cm-codeblock {
+  padding: 0 44px;
+  background: linear-gradient(var(--md-pre-bg), var(--md-pre-bg)) 28px 0 / calc(100% - 56px) 100% no-repeat;
+}
+.cm-line.cm-cb-first { padding-top: 8px; }
+.cm-line.cm-cb-last { padding-bottom: 8px; }
+.cm-math-src { color: var(--t-math); }
+
+/* Công thức, bảng, ảnh */
+.cm-math-inline { padding: 0 1px; cursor: text; }
+.cm-math-inline .katex { font-size: 1.05em; }
+.cm-math-block { padding: 6px 28px; text-align: center; overflow-x: auto; cursor: text; }
+.cm-math-block .katex-display { margin: 0.4em 0; }
+.cm-table { padding: 6px 28px; cursor: text; white-space: normal; line-height: 1.5; }
+.cm-table table { margin: 0; }
+.cm-image { max-width: 100%; max-height: 360px; border-radius: 6px; vertical-align: bottom; cursor: text; }
+
+/* Thanh tìm kiếm (Ctrl+F) */
+.cm-editor .cm-panels { background: var(--chrome); color: var(--text); }
+.cm-panels-top { border-bottom: 1px solid var(--border); }
+.cm-editor .cm-panel.cm-search { padding: 6px 10px; font-size: 12px; }
+.cm-panel.cm-search input, .cm-panel.cm-search button {
+  font: inherit;
+  color: var(--text);
+  background: var(--input-bg);
+  border: 1px solid var(--menu-border);
+  border-radius: 4px;
+  padding: 2px 6px;
+}
+.cm-panel.cm-search input[type="checkbox"] { padding: 0; }
+.cm-panel.cm-search .cm-textfield:focus { outline: 1px solid var(--accent); border-color: var(--accent); }
+.cm-panel.cm-search button[name="close"] { border: none; background: none; font-size: 16px; }
+.cm-editor .cm-searchMatch { background: color-mix(in srgb, #f5a623 35%, transparent); }
+.cm-editor .cm-searchMatch-selected { background: color-mix(in srgb, #f5a623 65%, transparent); }
+
+/* ---------- Nội dung HTML trong editor (bảng) — kiểu GitHub ---------- */
+.md {
+  padding: 18px 26px 48px;
+  font: 14px/1.6 -apple-system, BlinkMacSystemFont, "Segoe WPC", "Segoe UI", system-ui, sans-serif;
+  color: var(--text);
+  overflow-wrap: break-word;
+}
+.md > :first-child { margin-top: 0; }
+.md h1, .md h2, .md h3, .md h4, .md h5, .md h6 { margin: 1.2em 0 0.5em; line-height: 1.25; font-weight: 600; color: var(--tab-active-fg); }
+.md h1 { font-size: 1.9em; padding-bottom: 0.3em; border-bottom: 1px solid var(--md-line); }
+.md h2 { font-size: 1.45em; padding-bottom: 0.3em; border-bottom: 1px solid var(--md-line); }
+.md h3 { font-size: 1.2em; }
+.md h4 { font-size: 1em; }
+.md h5, .md h6 { font-size: 0.9em; color: var(--muted); }
+.md p, .md ul, .md ol, .md blockquote, .md pre, .md table, .md .math-block { margin: 0 0 0.9em; }
+.md ul, .md ol { padding-left: 1.8em; }
+.md li + li { margin-top: 0.2em; }
+.md li > ul, .md li > ol { margin: 0.2em 0 0; }
+.md li.task { list-style: none; }
+.md li.task > input { margin: 0 0.45em 0 -1.4em; vertical-align: -1px; accent-color: var(--accent); cursor: pointer; }
+.md li.task:has(> input:checked) { color: var(--muted); }
+.md a { color: var(--md-link); text-decoration: none; }
+.md a:hover { text-decoration: underline; }
+.md code {
+  padding: 0.15em 0.4em;
+  border-radius: 4px;
+  background: var(--md-code-bg);
+  font: 0.86em/1.4 Menlo, Monaco, "SF Mono", Consolas, monospace;
+}
+.md pre {
+  padding: 12px 14px;
+  border-radius: 6px;
+  background: var(--md-pre-bg);
+  border: 1px solid var(--border);
+  overflow: auto;
+}
+.md pre code { padding: 0; background: none; font-size: 12.5px; line-height: 1.55; }
+.md blockquote {
+  padding: 0.1em 1em;
+  border-left: 4px solid var(--md-line);
+  color: var(--muted);
+}
+.md blockquote > :last-child { margin-bottom: 0; }
+.md hr { height: 2px; margin: 1.4em 0; border: 0; background: var(--md-line); }
+.md table { border-collapse: collapse; display: block; width: max-content; max-width: 100%; overflow: auto; }
+.md th, .md td { padding: 5px 12px; border: 1px solid var(--md-line); }
+.md th { font-weight: 600; background: var(--md-pre-bg); }
+.md img { max-width: 100%; border-radius: 4px; }
+.md .math-block { overflow-x: auto; overflow-y: hidden; padding: 2px 0; }
+.md .katex { font-size: 1.08em; }
+.md .math-error { color: var(--t-code); }
+.md .empty { color: var(--muted); font-style: italic; }
+
+/* Thanh cuộn kiểu VS Code */
+.cm-scroller::-webkit-scrollbar { width: 14px; height: 14px; }
+.cm-scroller::-webkit-scrollbar-thumb { background: rgba(121, 121, 121, 0.4); border: 3px solid transparent; background-clip: content-box; }
+.cm-scroller::-webkit-scrollbar-thumb:hover { background-color: rgba(100, 100, 100, 0.7); }
+.cm-scroller::-webkit-scrollbar-corner { background: transparent; }
+
+/* Status bar xanh đặc trưng */
+.status {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  height: 22px;
+  padding: 0 4px;
+  background: var(--status-bg);
+  color: #fff;
+  font-size: 12px;
+  flex-shrink: 0;
+}
+.status > span { display: flex; align-items: center; gap: 5px; height: 100%; padding: 0 6px; white-space: nowrap; }
+.status .brand { margin-right: auto; }
+.status svg { width: 15px; height: 15px; }
+#saved::before { content: "✓"; font-size: 11px; }
+#saved.pending::before { content: "●"; font-size: 9px; }
